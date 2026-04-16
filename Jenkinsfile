@@ -45,4 +45,9 @@ pipeline {
             echo 'Pipeline échoué !'
         }
     }
+    stage('Test Docker') {
+        steps {
+            sh 'docker version'
+        }
+    }
 }

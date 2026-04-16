@@ -7,46 +7,65 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "insertion-service:latest"
+        IMAGE_NAME = "insertion-service"
+        IMAGE_TAG = "latest"
     }
 
     stages {
 
-        stage('Build & Test') {
+        stage('Checkout') {
             steps {
-                echo 'Build + Tests...'
-                sh 'mvn clean verify'
+                checkout scm
             }
         }
 
-        stage('Docker Check (safe)') {
+        stage('Build') {
             steps {
-                echo 'Docker CLI non disponible dans Jenkins container (skip check)'
+                sh 'mvn clean compile'
             }
         }
 
-        stage('Docker Build (skipped)') {
+        stage('Test') {
             steps {
-                echo 'Docker build ignoré car Docker CLI absent dans Jenkins container'
+                sh 'mvn test'
             }
         }
 
-        stage('Docker Login (skipped)') {
+        stage('Package') {
             steps {
-                echo 'Docker login ignoré dans cet environnement'
+                sh 'mvn package -DskipTests'
             }
         }
 
-        stage('Docker Push (skipped)') {
+        stage('Docker Build') {
             steps {
-                echo 'Docker push ignoré dans cet environnement'
+                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USER/$IMAGE_NAME:$IMAGE_TAG'
+                sh 'docker push $DOCKER_USER/$IMAGE_NAME:$IMAGE_TAG'
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline terminé avec succès (Maven OK)'
+            echo 'CI/CD terminé avec succès'
         }
         failure {
             echo 'Pipeline échoué'

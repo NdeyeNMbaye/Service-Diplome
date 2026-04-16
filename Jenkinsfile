@@ -6,39 +6,33 @@ pipeline {
         jdk 'JDK 17'
     }
 
+    environment {
+        IMAGE_NAME = "${DOCKER_HUB_USER}/insertion-service:latest"
+    }
+
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
 
-        stage('Build') {
+        stage('Build & Test') {
             steps {
-                echo 'Compilation du projet Spring Boot...'
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Lancement des tests...'
-                sh 'mvn test'
+                echo 'Build + Tests...'
+                sh 'mvn clean verify'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo 'Construction de l image Docker...'
-                sh 'docker build -t $DOCKER_HUB_USER/insertion-service:latest .'
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 echo 'Push vers Docker Hub...'
-                sh 'docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_TOKEN'
-                sh 'docker push $DOCKER_HUB_USER/insertion-service:latest'
+                withCredentials([string(credentialsId: 'docker-hub-token', variable: 'TOKEN')]) {
+                    sh 'echo $TOKEN | docker login -u $DOCKER_HUB_USER --password-stdin'
+                }
+                sh 'docker push $IMAGE_NAME'
             }
         }
     }

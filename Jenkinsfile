@@ -7,8 +7,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = "insertion-service"
-        IMAGE_TAG = "latest"
+        DOCKER_IMAGE = "ngoundje/insertion-service:latest"
     }
 
     stages {

@@ -19,45 +19,37 @@ pipeline {
             }
         }
 
-        stage('Docker Version Check') {
+        stage('Docker Check (safe)') {
             steps {
-                sh 'docker version'
+                echo 'Docker CLI non disponible dans Jenkins container (skip check)'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build (skipped)') {
             steps {
-                echo 'Construction image Docker...'
-                sh 'docker build -t $DOCKER_IMAGE .'
+                echo 'Docker build ignoré car Docker CLI absent dans Jenkins container'
             }
         }
 
-        stage('Login Docker Hub') {
+        stage('Docker Login (skipped)') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                }
+                echo 'Docker login ignoré dans cet environnement'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Docker Push (skipped)') {
             steps {
-                sh 'docker tag $DOCKER_IMAGE $DOCKER_USER/insertion-service:latest'
-                sh 'docker push $DOCKER_USER/insertion-service:latest'
+                echo 'Docker push ignoré dans cet environnement'
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline terminé avec succès !'
+            echo 'Pipeline terminé avec succès (Maven OK)'
         }
         failure {
-            echo 'Pipeline échoué !'
+            echo 'Pipeline échoué'
         }
     }
 }

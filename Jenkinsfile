@@ -38,7 +38,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
@@ -56,8 +56,7 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USER/$IMAGE_NAME:$IMAGE_TAG'
-                sh 'docker push $DOCKER_USER/$IMAGE_NAME:$IMAGE_TAG'
+                sh "docker push ${DOCKER_IMAGE}"
             }
         }
     }

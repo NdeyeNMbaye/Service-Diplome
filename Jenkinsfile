@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = "${DOCKER_HUB_USER}/insertion-service:latest"
+        DOCKER_IMAGE = "insertion-service:latest"
     }
 
     stages {
@@ -19,20 +19,35 @@ pipeline {
             }
         }
 
+        stage('Docker Version Check') {
+            steps {
+                sh 'docker version'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                echo 'Construction de l image Docker...'
-                sh 'docker build -t $IMAGE_NAME .'
+                echo 'Construction image Docker...'
+                sh 'docker build -t $DOCKER_IMAGE .'
+            }
+        }
+
+        stage('Login Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                echo 'Push vers Docker Hub...'
-                withCredentials([string(credentialsId: 'docker-hub-token', variable: 'TOKEN')]) {
-                    sh 'echo $TOKEN | docker login -u $DOCKER_HUB_USER --password-stdin'
-                }
-                sh 'docker push $IMAGE_NAME'
+                sh 'docker tag $DOCKER_IMAGE $DOCKER_USER/insertion-service:latest'
+                sh 'docker push $DOCKER_USER/insertion-service:latest'
             }
         }
     }
@@ -43,11 +58,6 @@ pipeline {
         }
         failure {
             echo 'Pipeline échoué !'
-        }
-    }
-    stage('Test Docker') {
-        steps {
-            sh 'docker version'
         }
     }
 }
